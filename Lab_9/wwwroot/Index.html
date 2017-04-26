@@ -1,0 +1,279 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <link href="lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+    <script src="lib/jquery/dist/jquery.js"></script>
+</head>
+<body>
+<div id="errors" class="alert alert-danger" style="display:none;"></div>
+<div>
+    <table id="contentBlock" class="table table-condensed table-striped table-bordered">
+        <thead><tr><th>Id</th><th>Name</th><th>Breed</th><th>Action</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<form id="addForm" name="userForm">
+    <input type="hidden" name="id" id="id" value="0"/>
+    <div class="form-group">
+        <label for="name">Name:</label>
+        <input class="form-control" id="name" name="name"/>
+    </div>
+    <div class="form-group">
+        <label for="breed">Breed:</label>
+        <input class="form-control" id="breed" name="breed"/>
+    </div>
+    <div class="panel-body">
+        <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+        <a id="reset" class="btn btn-sm btn-primary">Сбросить</a>
+        <a id="update" class="btn btn-sm btn-primary">Обновить таблицу</a>
+    </div>
+</form>
+
+<!--<div id="editBlock">
+    <p><b>Edit content</b></p>
+    <table class="table table-striped">
+        <tr><td><label>Name: </label></td><td><input type="text" id="editName"/></td></tr>
+        <tr><td><label>Breed: </label></td><td><input type="text" id="editBreed"/></td></tr>
+    </table>
+    <button id="editBook">Save</button>
+</div>-->
+
+<!--<div id="createBlock">
+    <p><b>Add content</b></p>
+    <table class="table table-striped">
+        <tr><td><label>Name: </label></td><td><input type="text" id="addName"/></td></tr>
+        <tr><td><label>Breed: </label></td><td><input type="text" id="addBreed"/></td></tr>
+    </table>
+    <button id="addBook">Save</button>
+</div>-->
+
+<script>
+    // Получение всех пользователей
+    function GetPets() {
+        $.ajax({
+            url: '/api/pets',
+            type: 'GET',
+            contentType: "application/json",
+            success: function(pets) {
+                var rows = "";
+                $.each(pets,
+                    function(index, pet) {
+                        rows += row(pet);
+                    });
+
+                $("#contentBlock").append(rows);
+            }
+        });
+    }
+
+    function GetPet(id) {
+        $.ajax({
+            url: '/api/pets/' + id,
+            type: 'GET',
+            contentType: "application/json",
+            success: function(pet) {
+                var form = document.forms["userForm"];
+                form.elements["id"].value = pet.id;
+                form.elements["name"].value = pet.name;
+                form.elements["breed"].value = pet.breed;
+            }
+        });
+    }
+
+    // Добавление пользователя
+    function CreatePet(petName, petBreed) {
+        $.ajax({
+            url: '/api/pets',
+            contentType: "application/json",
+            method: "POST",
+            data: JSON.stringify({
+                name: petName,
+                breed: petBreed
+            }),
+            success: function (pet) {              
+                reset();
+                $("#contentBlock").append(row(pet));       
+                $('#errors').hide();
+            },
+            error: function (jxqr, error, status) {
+                $('#errors').empty();
+
+                // парсинг json-объекта
+                console.log(jxqr);
+                if(jxqr.responseText===""){
+                    $('#errors').append("<h3>" + jxqr.statusText + "</h3>");
+                }
+                else{
+                    var response = JSON.parse(jxqr.responseText);
+                    // добавляем общие ошибки модели
+                    if (response['']) {
+ 
+                        $.each(response[''], function (index, item) {
+                            $('#errors').append("<p>" + item + "</p>");
+                        });
+                    }
+                    // добавляем ошибки свойства Name
+                    if (response['Name']) {
+ 
+                        $.each(response['Name'], function (index, item) {
+                            $('#errors').append("<p>" + item + "</p>");
+                        });
+                    }
+                    // добавляем ошибки свойства Age
+                    if (response['Breed']) {
+                        $.each(response['Breed'], function (index, item) {
+                            $('#errors').append("<p>" + item + "</p>");
+                        });
+                    }
+                }
+                     
+                $('#errors').show();
+            }
+        });
+    }
+
+    // Изменение пользователя
+    function EditPet(userId, petName, petBreed) {
+        $.ajax({
+            url: '/api/pets',
+            contentType: "application/json",
+            method: "PUT",
+            data: JSON.stringify({
+                id: userId,
+                name: petName,
+                breed: petBreed
+            }),
+            success: function(pet) {
+                reset();
+                $("tr[data-rowid='" + pet.id + "']").replaceWith(row(pet));
+                $('#errors').hide();
+            },
+            error: function (jxqr, error, status) {
+                $('#errors').empty();
+                // парсинг json-объекта
+                console.log(jxqr);
+                if(jxqr.responseText===""){
+                    $('#errors').append("<h3>" + jxqr.statusText + "</h3>");
+                }
+                else{
+                    var response = JSON.parse(jxqr.responseText);
+                    // добавляем общие ошибки модели
+                    if (response['']) {
+ 
+                        $.each(response[''], function (index, item) {
+                            $('#errors').append("<p>" + item + "</p>");
+                        });
+                    }
+                    // добавляем ошибки свойства Name
+                    if (response['Name']) {
+ 
+                        $.each(response['Name'], function (index, item) {
+                            $('#errors').append("<p>" + item + "</p>");
+                        });
+                    }
+                    // добавляем ошибки свойства Age
+                    if (response['Breed']) {
+                        $.each(response['Breed'], function (index, item) {
+                            $('#errors').append("<p>" + item + "</p>");
+                        });
+                    }
+                }
+                     
+                $('#errors').show();
+            }
+        });
+    }
+
+    // сброс формы
+    function reset() {
+        var form = document.forms["userForm"];
+        form.reset();
+        form.elements["id"].value = 0;
+    }
+
+
+    // Удаление пользователя
+    function DeletePet(id) {
+        $.ajax({
+            url: "api/pets/" + id,
+            contentType: "application/json",
+            method: "DELETE",
+            success: function(pet) {
+                $("tr[data-rowid='" + pet.id + "']").remove();
+            }
+        });
+    }
+
+    // создание строки для таблицы
+    var row = function(pet) {
+        return "<tr data-rowid='" +
+            pet.id +
+            "'><td>" +
+            pet.id +
+            "</td>" +
+            "<td>" +
+            pet.name +
+            "</td> <td>" +
+            pet.breed +
+            "</td>" +
+            "<td><a class='editLink' data-id='" +
+            pet.id +
+            "'>Изменить</a> | " +
+            "<a class='removeLink' data-id='" +
+            pet.id +
+            "'>Удалить</a></td></tr>";
+    }
+
+    // отправка формы
+    $("#addForm").submit(function(e) {
+        e.preventDefault();
+
+        var id = $("#id").val();
+        var name = $("#name").val();
+        var breed = $("#breed").val();
+
+        if (id == 0) {
+            CreatePet(name, breed);
+        } else {
+            EditPet(id, name, breed);
+        }
+    });
+
+    // нажимаем на ссылку Изменить
+    $("body").on("click",
+        ".editLink",
+        function() {
+            var id = $(this).data("id");
+            GetPet(id);
+        });
+
+    // нажимаем на ссылку Удалить
+    $("body").on("click",
+        ".removeLink",
+        function() {
+            var id = $(this).data("id");
+            DeletePet(id);
+        });
+
+    // сброс значений формы
+    $("#reset").click(function(e) {
+        e.preventDefault();
+        reset();
+    });
+
+    // обновить таблицу
+    $("#update").click(function(e) {
+        e.preventDefault();
+        $('tbody').empty();
+        GetPets();
+    });
+
+    // загрузка пользователей
+    GetPets();
+
+</script>
+</body>
+</html>
